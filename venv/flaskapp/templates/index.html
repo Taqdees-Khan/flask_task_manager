@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container"> <!-- Added container for styling -->
+        <h1>Task Manager</h1>
+        
+        <input type="text" id="taskInput" placeholder="Enter a task...">
+        <button id="addTaskButton">Add Task</button>
+
+        <ul id="taskList"></ul>
+    </div>
+
+    <script>
+        // Function to fetch tasks and display them
+        function fetchTasks() {
+            $.get('/tasks', function(data) {
+                $('#taskList').empty(); // Clear existing tasks
+                data.forEach(function(task) {
+                    $('#taskList').append('<li>' + task.task + ' <button onclick="deleteTask(' + task.id + ')">Delete</button></li>');
+                });
+            }).fail(function() {
+                alert('Error fetching tasks.');
+            });
+        }
+
+        // Function to add a new task
+        $('#addTaskButton').click(function() {
+            const taskDescription = $('#taskInput').val();
+            if (taskDescription.trim() === '') {
+                alert('Task description is required.');
+                return;
+            }
+
+            $.ajax({
+                url: '/tasks',
+                type: 'POST',
+                contentType: 'application/json', // Set the content type to JSON
+                data: JSON.stringify({ task: taskDescription }), // Send the task as JSON
+                success: function(data) {
+                    $('#taskInput').val(''); // Clear the input field
+                    fetchTasks(); // Refresh the task list
+                },
+                error: function() {
+                    alert('Error adding task. Make sure the task description is provided.');
+                }
+            });
+        });
+
+        // Function to delete a task
+        function deleteTask(taskId) {
+            $.ajax({
+                url: '/tasks/' + taskId,
+                type: 'DELETE',
+                success: function() {
+                    fetchTasks(); // Refresh the task list
+                },
+                error: function() {
+                    alert('Error deleting task.');
+                }
+            });
+        }
+
+        // Fetch tasks on page load
+        $(document).ready(function() {
+            fetchTasks();
+        });
+    </script>
+</body>
+</html>
